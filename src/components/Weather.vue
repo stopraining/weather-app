@@ -45,11 +45,11 @@
             <div class="card-body">
               <h4>{{l.locationName }}</h4>
               <hr>  
-              <p>{{l.weatherElement[1].time[1].elementValue[0].value }} </p><br>
+              <p>{{l.weatherElement[1].time[0].elementValue[0].value }} </p><br>
               <i class="fa-solid fa-temperature-high"></i>
-              <p>溫度：{{l.weatherElement[3].time[1].elementValue[0].value }} &#176;C</p><br>
+              <p>溫度：{{l.weatherElement[3].time[0].elementValue[0].value }} &#176;C</p><br>
               <i class="fa-solid fa-person"></i>
-              <p>體感溫度：：{{l.weatherElement[2].time[1].elementValue[0].value }} &#176;C</p><br>
+              <p>體感溫度：：{{l.weatherElement[2].time[0].elementValue[0].value }} &#176;C</p><br>
               <i class="fa-solid fa-droplet"></i>
               <p>降雨機率：{{l.weatherElement[7].time[0].elementValue[0].value }}%</p>
             </div>
@@ -125,10 +125,10 @@ export default {
       let areaIndex = this.area 
       this.areaSelect.cardShow = true
       this.areaSelect.name = this.location[areaIndex].locationName
-      this.areaSelect.temp = this.location[areaIndex].weatherElement[3].time[1].elementValue[0].value
+      this.areaSelect.temp = this.location[areaIndex].weatherElement[3].time[0].elementValue[0].value
       this.areaSelect.rain = this.location[areaIndex].weatherElement[7].time[0].elementValue[0].value
-      this.areaSelect.intro= this.location[areaIndex].weatherElement[1].time[1].elementValue[0].value
-      this.areaSelect.bodyTemp = this.location[areaIndex].weatherElement[2].time[1].elementValue[0].value
+      this.areaSelect.intro= this.location[areaIndex].weatherElement[1].time[0].elementValue[0].value
+      this.areaSelect.bodyTemp = this.location[areaIndex].weatherElement[2].time[0].elementValue[0].value
       
       if(/晴/g.test(this.areaSelect.intro)){
         this.areaSelect.icon = 'fa-solid fa-sun fa-2xl fa-bounce'
