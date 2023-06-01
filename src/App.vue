@@ -1,12 +1,10 @@
 <template>
-  <!-- <img alt="Vue logo" src="./assets/logo.png"> -->
-  <!-- <HelloWorld msg="Welcome to Your Vue.js App"/> -->
   <Weather></Weather>
-  
 </template>
 
 <script>
 import Weather from './components/Weather.vue'
+
 
 
 export default {

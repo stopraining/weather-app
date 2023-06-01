@@ -1,22 +1,20 @@
 <template>
   <div class="weather">
     <h1>Taiwan Weather</h1>
-    <!-- <select name="" id="" v-model="temp" @change="getWeatherApi"> -->
     <div class="container-fluid">
-      <select name="" id="" v-model="temp" @change="getWeatherApi" class="form-select-lg m-2" aria-label="Default select example">
+      <select name="" id="" v-model="countryIndex" @change="getWeatherApi" class="form-select-lg m-2" aria-label="Default select example">
         <option disabled value="" >縣市</option>
-        <option v-for="item in locations" :value="item.code" >{{item.name}}</option>
+        <option v-for="(item,index ) in locations" :value="index" >{{item.name}}</option>
       </select>
-      <select name="" id="" v-model="area" @change="areaTest" class="form-select-lg" aria-label="Default select example">
+      <select name="" id="" v-model="area" @change="areaSelected" class="form-select-lg" aria-label="Default select example">
         <option disabled value="" >鄉鎮區</option>
         <option v-for="(a,index ) in location" :value="index">{{ a.locationName }}</option>
       </select>
     </div>
     <br>
-    
     <!-- area selected -->
     <div v-show="areaSelect.cardShow" class="container-fluid">
-      <div class="row justify-content-center ">
+      <div class="row justify-content-center">
         <div class="card mainCard">
           <div class="card-body">
               <div class="mainCardRight">
@@ -30,18 +28,19 @@
                 <span>{{ areaSelect.intro }}</span>
                 <i :class="this.areaSelect.icon"></i>
                 <h2 class="temp">{{ areaSelect.temp }}&#176;C&nbsp;</h2>
+                <button class="btn btn-outline-secondary" @click="chartShow">一週溫度曲線</button>
               </div>
           </div>
         </div>
       </div>
     </div>
+    <week-temp :areaI="areaIndex" :counrtyI="countryIndex" :showChart="showChartTF"></week-temp>
     <!-- all area -->
     <h1>總覽</h1>
     <div class="container-fluid">
-      <div class="row row-cols-xxl-5 row justify-content-start g-4 p-5">
-        <div class="col"  v-for="l in location">
+      <div class="row  g-3 p-5 justify-content-start ">
+        <div class="col-sm-6 col-md-4 col-xxl-3"  v-for="l in location">
           <div class="card allCard">
-            <img src="" class="card-img-top" alt="">
             <div class="card-body">
               <h4>{{l.locationName }}</h4>
               <hr>  
@@ -65,12 +64,17 @@
 <script>
 import axios from 'axios'
 import moment from 'moment'
+import WeekTemp from './WeekTemp.vue'
+import swal from 'sweetalert';   //when api error
+
 export default {
   name: 'Weather',
+  components: {
+    WeekTemp
+  },
   data(){
     return{
-      temp:'',
-      apiKey:'CWB-CD62E333-DFC2-48D6-9D5F-B6CEE673C2EF',
+      apiKey:'CWB-C48E22BF-3D5D-48C7-88A1-BB0DB71FD8AA',
       locations:[
         {name:'基隆市',code:'F-D0047-049'},
         {name:'新北市',code:'F-D0047-069'},
@@ -95,41 +99,54 @@ export default {
         {name:'連江縣',code:'F-D0047-081'},
         {name:'金門縣',code:'F-D0047-085'},
       ],
+      country:'',
+      countryIndex:'',
       location:'',
       area:'',
-      areaSelect:{name:'',temp:'',rain:'',intro:'',cardShow:false,icon:'',bodyTemp:''}
-      
-
+      areaIndex:'',
+      areaSelect:{name:'',temp:'',rain:'',intro:'',cardShow:false,icon:'',bodyTemp:''},
+      showChartTF:false
     }
   },
   methods:{
     async getWeatherApi(){
+      this.showChartTF = false
       this.areaSelect = {name:'',temp:'',intro:'',cardShow:false}
       this.area = ''
       let time = moment().format('YYYY-MM-DDTHH:mm:ss')
       time = encodeURIComponent(time)
-      let getWeather = await axios.get(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/${this.temp}?Authorization=${this.apiKey}&timeTo=${time}`)
-      // let getWeather = await axios.get(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/${this.temp}?Authorization=${this.apiKey}`)
-      // console.log(JSON.stringify(getWeather))
-      
+      this.country =  this.locations[this.countryIndex].code
+      let getWeather = await axios.get(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/${this.country}?Authorization=${this.apiKey}&timeTo=${time}`)
       this.location = getWeather.data.records.locations[0].location
       
+      //api error alert!!!
+      if(this.location[0].weatherElement[1].time.length==0){
+        swal({
+          title: "Error!",
+          text: "API異常，請稍候再試",
+          icon: "error",
+          button: "Confirm",
+        })
+        .then(()=>location.reload())
+      }
       // console.log(JSON.stringify(this.location))
+      // console.log(this.location[0].weatherElement[1].time.length)
     },
-    areaTest(){ 
-      
-      // console.log(this.area)
-      // console.log(this.location.length)
-
+    areaSelected(){ 
+      this.showChartTF = false
       // 選到的區域index
-      let areaIndex = this.area 
+      this.areaIndex = this.area
+      let aindex  =  this.areaIndex
+       
+      //area data
       this.areaSelect.cardShow = true
-      this.areaSelect.name = this.location[areaIndex].locationName
-      this.areaSelect.temp = this.location[areaIndex].weatherElement[3].time[0].elementValue[0].value
-      this.areaSelect.rain = this.location[areaIndex].weatherElement[7].time[0].elementValue[0].value
-      this.areaSelect.intro= this.location[areaIndex].weatherElement[1].time[0].elementValue[0].value
-      this.areaSelect.bodyTemp = this.location[areaIndex].weatherElement[2].time[0].elementValue[0].value
+      this.areaSelect.name = this.location[aindex].locationName
+      this.areaSelect.temp = this.location[aindex].weatherElement[3].time[0].elementValue[0].value
+      this.areaSelect.rain = this.location[aindex].weatherElement[7].time[0].elementValue[0].value
+      this.areaSelect.intro= this.location[aindex].weatherElement[1].time[0].elementValue[0].value
+      this.areaSelect.bodyTemp = this.location[aindex].weatherElement[2].time[0].elementValue[0].value
       
+      //icon
       if(/晴/g.test(this.areaSelect.intro)){
         this.areaSelect.icon = 'fa-solid fa-sun fa-2xl fa-bounce'
       }else if(/雨/g.test(this.areaSelect.intro)){
@@ -137,24 +154,18 @@ export default {
       }else if(/陰|雲/g.test(this.areaSelect.intro)){
         this.areaSelect.icon = 'fa-solid fa-cloud fa-2xl fa-bounce'
       }
-      
-      
-      // return this.area===''?'':`${this.location[areaIndex].locationName}/溫度：${this.location[areaIndex].weatherElement[3].time[0].elementValue[0].value}`
-      // return this.areaSelect.name
+    },
+    chartShow(){
+      this.showChartTF = !this.showChartTF
     }
-  },
-  props: {
-    // areaIndex: Number,
-    // locationData:Array
   }
   
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
+
 <style scoped>
-/* <!-- <style lang="scss">
-  @import '~bootstrap/scss/bootstrap'; --> */
+
 
 h1{
   margin: 30px 0px; 
@@ -203,7 +214,6 @@ a {
 }
 
 .mainCardLeft{
-  
   float: right;
   text-align: right;
   width: 50%;
@@ -211,9 +221,10 @@ a {
 
 
 .allCard{
-  width:250px; 
+  /* width:250px;  */
   box-shadow: 5px 5px 10px white;
-  color:steelblue
+  color:steelblue;
+  float: center;
 }
 
 .allCard p{
@@ -222,9 +233,8 @@ a {
 }
 
 .temp{
-  margin: 0px; 
   font-size: 40pt;
-  
+  margin-bottom:10px;
 }
 
 </style>
