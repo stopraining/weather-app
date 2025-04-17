@@ -8,6 +8,7 @@
 
 <script>
 import axios from "axios";
+import moment from "moment";
 
 import {
   Chart as ChartJS,
@@ -157,18 +158,18 @@ export default {
   },
   watch: {
     async showChart(newValue) {
+      // TODO 最低溫度不見
       if (newValue) {
         this.loaded = false;
         let weekCountryCode = this.locations[this.counrtyI].code;
         let getWeek = await axios.get(
           `https://opendata.cwa.gov.tw/api/v1/rest/datastore/${weekCountryCode}?Authorization=${this.apiKey}`
         );
-        let weekArea = getWeek.data.records.locations[0].location[this.areaI];
+        let weekArea = getWeek.data.records.Locations[0].Location[this.areaI];
         // console.log(JSON.stringify(weekArea.weatherElement[12].time))
-
-        let LowTempData = weekArea.weatherElement[8].time;
-        let highTempData = weekArea.weatherElement[12].time;
-        let weatherDes = weekArea.weatherElement[6].time;
+        let LowTempData = weekArea.WeatherElement[2].Time;
+        let highTempData = weekArea.WeatherElement[1].Time;
+        let weatherDes = weekArea.WeatherElement[14].Time;
 
         this.data.datasets[0].data = this.weekArray(LowTempData);
         this.data.datasets[1].data = this.weekArray(highTempData);
@@ -181,24 +182,25 @@ export default {
   },
   methods: {
     weekArray(dataArray) {
-      //low and high temp array data clean
       let resultArray = [];
       dataArray.map((x) => {
-        resultArray.push(x.elementValue[0].value);
+        let data = x.ElementValue[0].MaxTemperature
+          ? x.ElementValue[0].MaxTemperature
+          : x.ElementValue[0].MinTemperature;
+        resultArray.push(data);
       });
 
       return resultArray;
     },
     weekDateArray(dataArray) {
-      //x-axis clean
       let resultArray = [];
       dataArray.map((x) => {
-        let dateString = x.startTime;
-        dateString = dateString.replace(/2023-/g, "");
-        dateString = dateString.replace(/-/g, "/");
-        dateString = dateString.replace(/06:00:00/g, "上午6時");
-        dateString = dateString.replace(/18:00:00/g, "下午6時");
-        dateString = dateString.replace(/12:00:00/g, "中午12時");
+        let dateString = x.StartTime;
+        dateString = moment(dateString).format("MM-DD HH:mm");
+        dateString = dateString.replace(/06:00/g, "上午6時");
+        dateString = dateString.replace(/18:00/g, "下午6時");
+        dateString = dateString.replace(/12:00/g, "中午12時");
+
         resultArray.push(dateString.split(" "));
       });
       return resultArray;
@@ -207,7 +209,6 @@ export default {
 };
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 /* <!-- <style lang="scss">
     @import '~bootstrap/scss/bootstrap'; --> */

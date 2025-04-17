@@ -25,7 +25,7 @@
       >
         <option disabled value="">鄉鎮區</option>
         <option v-for="(a, index) in location" :value="index">
-          {{ a.locationName }}
+          {{ a.LocationName }}
         </option>
       </select>
     </div>
@@ -66,20 +66,26 @@
         <div class="col-sm-6 col-md-4 col-xxl-3" v-for="l in location">
           <div class="card allCard">
             <div class="card-body">
-              <h4>{{ l.locationName }}</h4>
+              <h4>{{ l.LocationName }}</h4>
               <hr />
-              <p>{{ l.weatherElement[1].time[0].elementValue[0].value }}</p>
+              <p>
+                {{ l.WeatherElement[1].Time[timeIndex].ElementValue[0].value }}
+              </p>
               <br />
               <i class="fa-solid fa-temperature-high"></i>
               <p>
-                溫度：{{ l.weatherElement[3].time[0].elementValue[0].value }}
+                溫度：{{
+                  l.WeatherElement[0].Time[timeIndex].ElementValue[0]
+                    .Temperature
+                }}
                 &#176;C
               </p>
               <br />
               <i class="fa-solid fa-person"></i>
               <p>
                 體感溫度：：{{
-                  l.weatherElement[2].time[0].elementValue[0].value
+                  l.WeatherElement[3].Time[timeIndex].ElementValue[0]
+                    .ApparentTemperature
                 }}
                 &#176;C
               </p>
@@ -87,7 +93,8 @@
               <i class="fa-solid fa-droplet"></i>
               <p>
                 降雨機率：{{
-                  l.weatherElement[7].time[0].elementValue[0].value
+                  l.WeatherElement[7].Time[0].ElementValue[0]
+                    .ProbabilityOfPrecipitation
                 }}%
               </p>
             </div>
@@ -102,7 +109,7 @@
 import axios from "axios";
 import moment from "moment";
 import WeekTemp from "./WeekTemp.vue";
-import swal from "sweetalert"; //when api error
+import swal from "sweetalert";
 
 export default {
   name: "Weather",
@@ -151,6 +158,7 @@ export default {
         bodyTemp: "",
       },
       showChartTF: false,
+      timeIndex: 0,
     };
   },
   methods: {
@@ -159,13 +167,25 @@ export default {
         this.showChartTF = false;
         this.areaSelect = { name: "", temp: "", intro: "", cardShow: false };
         this.area = "";
+        // time超過晚上11點後要取隔天00:00
         let time = moment().format("YYYY-MM-DDTHH:mm:ss");
-        time = encodeURIComponent(time);
+        time =
+          time.split("T")[1].split(":")[0] === "23"
+            ? moment()
+                .add(1, "day")
+                .startOf("day")
+                .add(1, "seconds")
+                .format("YYYY-MM-DDTHH:mm:ss")
+            : time;
+        // 時間取得處理 timeTo 回傳的Time陣列有到指定時間前的好幾筆，最後一筆才是最接近的資料
+        // 時間到晚上十一點回傳的time陣列就會是空的
+        // time = encodeURIComponent(time);
         this.country = this.locations[this.countryIndex].code;
         let getWeather = await axios.get(
           `https://opendata.cwa.gov.tw/api/v1/rest/datastore/${this.country}?Authorization=${this.apiKey}&timeTo=${time}`
         );
-        this.location = getWeather.data.records.locations[0].location;
+        this.location = getWeather.data.records.Locations[0].Location;
+        this.timeIndex = this.location[0].WeatherElement[0].Time.length - 1;
       } catch (e) {
         //api error alert!!!
         swal({
@@ -181,18 +201,27 @@ export default {
       // 選到的區域index
       this.areaIndex = this.area;
       let aindex = this.areaIndex;
-
       //area data
       this.areaSelect.cardShow = true;
-      this.areaSelect.name = this.location[aindex].locationName;
+      this.areaSelect.name = this.location[aindex].LocationName;
+      // 溫度
       this.areaSelect.temp =
-        this.location[aindex].weatherElement[3].time[0].elementValue[0].value;
+        this.location[aindex].WeatherElement[0].Time[
+          this.timeIndex
+        ].ElementValue[0].Temperature;
+      // 降雨
       this.areaSelect.rain =
-        this.location[aindex].weatherElement[7].time[0].elementValue[0].value;
+        this.location[
+          aindex
+        ].WeatherElement[7].Time[0].ElementValue[0].ProbabilityOfPrecipitation;
+      // 概述
       this.areaSelect.intro =
-        this.location[aindex].weatherElement[1].time[0].elementValue[0].value;
+        this.location[aindex].WeatherElement[8].Time[0].ElementValue[0].Weather;
+      // 體感溫度
       this.areaSelect.bodyTemp =
-        this.location[aindex].weatherElement[2].time[0].elementValue[0].value;
+        this.location[aindex].WeatherElement[3].Time[
+          this.timeIndex
+        ].ElementValue[0].ApparentTemperature;
 
       //icon
       if (/晴/g.test(this.areaSelect.intro)) {
