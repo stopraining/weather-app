@@ -46,9 +46,9 @@
               <span>{{ areaSelect.intro }}</span>
               <i :class="this.areaSelect.icon"></i>
               <h2 class="temp">{{ areaSelect.temp }}&#176;C&nbsp;</h2>
-              <button class="btn btn-outline-secondary" @click="chartShow">
+              <!--<button class="btn btn-outline-secondary" @click="chartShow">
                 一週溫度曲線
-              </button>
+              </button>-->
             </div>
           </div>
         </div>
@@ -144,7 +144,7 @@ export default {
         { name: "金門縣", code: "F-D0047-085" },
       ],
       country: "",
-      countryIndex: "",
+      countryIndex: 0,
       location: "",
       area: "",
       areaIndex: "",
@@ -231,10 +231,13 @@ export default {
       } else if (/陰|雲/g.test(this.areaSelect.intro)) {
         this.areaSelect.icon = "fa-solid fa-cloud fa-2xl fa-bounce";
       }
+      this.showChartTF = true;
     },
-    chartShow() {
-      this.showChartTF = !this.showChartTF;
-    },
+  },
+  async mounted() {
+    await this.getWeatherApi();
+    this.area = 0;
+    this.areaSelected();
   },
 };
 </script>

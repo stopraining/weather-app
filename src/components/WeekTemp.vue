@@ -157,9 +157,8 @@ export default {
     Line,
   },
   watch: {
-    async showChart(newValue) {
-      // TODO 最低溫度不見
-      if (newValue) {
+    async areaI(newValue) {
+      if (newValue >= 0) {
         this.loaded = false;
         let weekCountryCode = this.locations[this.counrtyI].code;
         let getWeek = await axios.get(
